@@ -142,6 +142,7 @@ class Manipulator:
         Often, the columns on NIDS datasets are not numeric when they should be.
         This method coerces the specified columns to be numeric.
         '''
+
         for col in numeric_cols:
             self.processed_df[col] = pd.to_numeric(self.processed_df[col], errors="coerce")
             self.processed_df = self.processed_df.dropna(subset=[col])

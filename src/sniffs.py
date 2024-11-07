@@ -9,6 +9,7 @@ from sklearn import preprocessing
 
 import data_manip
 import ml
+from models import train_siamese_network
 import utils
 import metrics
 import pandas as pd
@@ -699,7 +700,15 @@ class RollingMetricSniff(BaseSniff):
         if results is None:
             results_dict["Provide results directory for full results"] = ""
         
+class SiameseSniff(BaseSniff):
+    def __init__(self, manipulator: data_manip.Manipulator):
+        super(SiameseSniff, self).__init__("Simese Network", "", "Data Complexity", manipulator=manipulator)
 
+    def pipeline(self):
+        train_features, train_labels, test_features, test_labels, _, _ = self.manipulator.getTrainTestFeatures()
+        i1, i2 = train_siamese_network(train_features, train_labels, test_features, test_labels, epochs=1)
+        print(i1)
+        print(i2)
 
 
 class CompleteSniff(BaseSniff):
@@ -737,8 +746,8 @@ class CompleteSniff(BaseSniff):
 
         return results_dict
 
-#m = data_manip.Manipulator("/home/rob/Documents/PhD/WhiffSuite/tests/csvs", metadata_path="/home/rob/Documents/PhD/WhiffSuite/tests/metadata/our_metadata.json", target_label="Attack", metadata_manip=False)
+m = data_manip.Manipulator("/home/rob/Documents/PhD/WhiffSuite/tests/csvs", metadata_path="/home/rob/Documents/PhD/WhiffSuite/tests/metadata/our_metadata.json", target_label="Attack", metadata_manip=False)
 
-#t = CosineSniff(m)
-#t.pipeline()
-#print(m.operations_log)
+t = SiameseSniff(m)
+t.pipeline()
+print(m.operations_log)

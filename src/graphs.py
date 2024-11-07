@@ -14,33 +14,59 @@ class BaseGraphMetric:
     def apply_metric(self):
         raise NotImplementedError("Must implement apply_metric method")
 
-class DegreeCentralityMetric(BaseGraphMetric):
+class DegreeCentralityGraphMetric(BaseGraphMetric):
     def __init__(self, graph: nx.Graph):
         super().__init__("Degree Centrality", "Calculates the degree centrality of each node", graph)
 
-    def apply_metric(self):
+    def apply_metric(self, weight=None):
         return nx.degree_centrality(self.graph)
 
-class BetweennessCentralityMetric(BaseGraphMetric):
+class BetweennessCentralityGraphMetric(BaseGraphMetric):
     def __init__(self, graph: nx.Graph):
         super().__init__("Betweenness Centrality", "Calculates the betweenness centrality of each node", graph)
 
-    def apply_metric(self):
+    def apply_metric(self, weight=None):
         return nx.betweenness_centrality(self.graph)
 
-class ClosenessCentralityMetric(BaseGraphMetric):
+class ClosenessCentralityGraphMetric(BaseGraphMetric):
     def __init__(self, graph: nx.Graph):
         super().__init__("Closeness Centrality", "Calculates the closeness centrality of each node", graph)
 
-    def apply_metric(self):
-        return nx.closeness_centrality(self.graph)
+    def apply_metric(self, weight=None):
+        if weight is None:
+            return nx.closeness_centrality(self.graph)
+        else:
+            return nx.closeness_centrality(self.graph, distance=weight)
 
-class ShortestPathMetric(BaseGraphMetric):
+class ShortestPathGraphMetric(BaseGraphMetric):
     def __init__(self, graph: nx.Graph):
         super().__init__("Shortest Path", "Finds the shortest path between nodes", graph)
 
     def apply_metric(self, source, target):
         return nx.shortest_path(self.graph, source=source, target=target)
+
+class DegreeDistributionGraphMetric(BaseGraphMetric):
+    def __init__(self, graph: nx.Graph):
+        super().__init__("Degree Distribution", "Something", graph)
+
+    def _build_degree_count(self):
+        degree_sequence = sorted((d for _, d in self.graph.degree()), reverse=True)
+        degree_df = pd.DataFrame({"Degree": degree_sequence})
+        return degree_df.value_counts()
+
+    def apply_metric(self, weight=None):
+        return self._build_degree_count()
+
+class WeightDistributionGraphMetric(BaseGraphMetric):
+    def __init__(self, graph: nx.Graph):
+        super().__init__("Weight Distribution", "Something", graph)
+
+    def apply_metric(self, weight):
+        edges = self.graph.edges(data=True)
+        edges_with_weights = [(u, v, d[weight]) for u, v, d in edges]
+        edge_df = pd.DataFrame(edges_with_weights, columns=['Node1', 'Node2', 'Weight'])
+        return edge_df["Weight"].value_counts()
+
 
 class IPGraph:
     def __init__(self, manipulator: Manipulator = None, graph_type: str = "graph", weight_type: str = "ascending", weight_column: str = None, labels: list = None):
@@ -109,28 +135,31 @@ class IPGraph:
             pairs.append((src, dst))
         return pairs
 
-    def apply_metric(self, metric: BaseGraphMetric):
+    def apply_metric(self, metric: BaseGraphMetric, **kwargs):
         print("[*] Applying Graph Metric")
         metric.graph = self.graph
-        return metric.apply_metric(self.graph, weight=self.weight)
+        return metric.apply_metric(**kwargs)
 
 
-# Example usageweight
+# Example usage
 
 m = Manipulator("/home/rob/Documents/PhD/WhiffSuite/tests/csvs", metadata_path="/home/rob/Documents/PhD/WhiffSuite/tests/metadata/our_metadata.json", target_label="Attack", metadata_manip=False)
 
 ip_graph = IPGraph(m)
 ip_graph._init_graph(graph_type='graph', weight_column=m.backward_packets_field)
-metric = BetweennessCentralityMetric(ip_graph.graph) # 196.133.39.158
-result = ip_graph.apply_metric(metric)
+metric = WeightDistributionGraphMetric(ip_graph.graph) # 196.133.39.158
+result = ip_graph.apply_metric(metric, weight="weight")
 print(result)
 
 # If weight is defined, we need to pass the weight to the appropriate metrics
 
+# Also, probably want to do some representative downsampling as I imagine shoving an entire
+# dataset through these measures will take hours
+
 # Want to expand to the following measures
 # Graph Density
 # Clustering Metrics
-# Degree distribution
+# Degree histogram
 # Connected components --- maybe parts of the network are isolated from other parts?
 # Edge betweenness -- 
 # Node redudancy/overlaps

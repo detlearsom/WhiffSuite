@@ -127,7 +127,9 @@ class Manipulator:
         '''
         Drop specified columns
         '''
-        self.processed_df = self.processed_df.drop(cols_to_drop, axis=1)
+        for col in cols_to_drop:
+            if col in self.processed_df.columns:
+                self.processed_df = self.processed_df.drop(col, axis=1)
         self.update_log("drop_columns", cols_to_drop)
     
     def drop_duplicates(self):

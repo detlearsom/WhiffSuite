@@ -1,6 +1,6 @@
-from tkinter import E
 import networkx as nx
 import pandas as pd
+import numpy as np
 from collections import Counter
 from data_manip import Manipulator
 
@@ -18,14 +18,14 @@ class DegreeCentralityGraphMetric(BaseGraphMetric):
     def __init__(self, graph: nx.Graph):
         super().__init__("Degree Centrality", "Calculates the degree centrality of each node", graph)
 
-    def apply_metric(self, weight=None):
+    def apply_metric(self):
         return nx.degree_centrality(self.graph)
 
 class BetweennessCentralityGraphMetric(BaseGraphMetric):
     def __init__(self, graph: nx.Graph):
         super().__init__("Betweenness Centrality", "Calculates the betweenness centrality of each node", graph)
 
-    def apply_metric(self, weight=None):
+    def apply_metric(self):
         return nx.betweenness_centrality(self.graph)
 
 class ClosenessCentralityGraphMetric(BaseGraphMetric):
@@ -54,7 +54,7 @@ class DegreeDistributionGraphMetric(BaseGraphMetric):
         degree_df = pd.DataFrame({"Degree": degree_sequence})
         return degree_df.value_counts()
 
-    def apply_metric(self, weight=None):
+    def apply_metric(self):
         return self._build_degree_count()
 
 class WeightDistributionGraphMetric(BaseGraphMetric):
@@ -86,6 +86,37 @@ class IPGraph:
         self.graph = None
         self.filter_classes(labels)
         self._init_graph(self.graph_type, self.weight_type, self.weight_column)
+
+    def is_weighted(self):
+        """Check if the graph has weighted edges."""
+        weight = nx.get_edge_attributes(self.graph, 'weight')
+        return bool(weight)
+
+
+    def draw_graph(self, filename):
+        import matplotlib.pyplot as plt
+        """Draw the graph with matplotlib with nodes labeled and weights (if any) shown."""
+        pos = nx.spring_layout(self.graph)  # positions for all nodes
+
+        # Draw nodes
+        nx.draw_networkx_nodes(self.graph, pos, node_size=10)
+
+        # Draw edges with labels
+        if self.is_weighted():
+            labels = nx.get_edge_attributes(self.graph, 'weight')
+            nx.draw_networkx_edges(self.graph, pos)
+            nx.draw_networkx_edge_labels(self.graph, pos, edge_labels=labels)
+        else:
+            nx.draw_networkx_edges(self.graph, pos)
+
+        # Labels for nodes
+        nx.draw_networkx_labels(self.graph, pos, font_size=8, font_family="sans-serif")
+        
+        # Show the plot
+        plt.title("Graph Visualization")
+        plt.axis("off")  # Turn off the axis
+        plt.savefig(filename)
+
 
     def filter_classes(self, labels=None):
         if labels is not None:
@@ -135,6 +166,40 @@ class IPGraph:
             pairs.append((src, dst))
         return pairs
 
+    def reduce_graph_by_cluster(self, weight='weight', resolution=1.0, threshold=1e-07, seed=None):
+        # Detecting communities with the Louvain method
+        self.graph = nx.fast_gnp_random_graph(n=200, p=0.1)
+        communities = nx.community.louvain_communities(self.graph, weight=weight, resolution=resolution, threshold=threshold, seed=seed)
+        
+        # Create a new graph from found communities
+        community_graph = nx.Graph()
+        
+        # Map each node to its community
+        node_to_community = {}
+        for index, community in enumerate(communities):
+            for node in community:
+                node_to_community[node] = index
+            community_graph.add_node(index)  # add community as node
+        
+        # Add edges between communities
+        for (u, v, d) in self.graph.edges(data=True):
+            cu = node_to_community[u]
+            cv = node_to_community[v]
+            if cu != cv:
+                if community_graph.has_edge(cu, cv):
+                    community_graph[cu][cv]['weight'] += d.get(weight, 1)
+                else:
+                    community_graph.add_edge(cu, cv, weight=d.get(weight, 1))
+
+        self.graph = community_graph           
+        #return community_graph, communities
+
+    def reduce_graph_by_degree(self, threshold_percent=90):
+        degree_threshold = np.percentile([d for n, d in self.graph.degree()], threshold_percent)
+        high_degree_nodes = [node for node in self.graph if self.graph.degree(node) > degree_threshold]  # Adjust threshold accordingly
+        filtered_graph = self.graph.subgraph(high_degree_nodes)
+        self.graph = filtered_graph
+
     def apply_metric(self, metric: BaseGraphMetric, **kwargs):
         print("[*] Applying Graph Metric")
         metric.graph = self.graph
@@ -147,9 +212,11 @@ m = Manipulator("/home/rob/Documents/PhD/WhiffSuite/tests/csvs", metadata_path="
 
 ip_graph = IPGraph(m)
 ip_graph._init_graph(graph_type='graph', weight_column=m.backward_packets_field)
-metric = WeightDistributionGraphMetric(ip_graph.graph) # 196.133.39.158
-result = ip_graph.apply_metric(metric, weight="weight")
-print(result)
+#metric = WeightDistributionGraphMetric(ip_graph.graph) # 196.133.39.158
+#result = ip_graph.apply_metric(metric, weight="weight")
+
+ip_graph.reduce_graph_by_cluster(resolution=1, threshold=1e-07)
+ip_graph.draw_graph("test.pdf")
 
 # If weight is defined, we need to pass the weight to the appropriate metrics
 

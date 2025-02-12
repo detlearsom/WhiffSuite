@@ -71,7 +71,7 @@ Our metadata assumes that the dataset file is comma-separated CSV with labelled 
 
 Note that WhiffSuite provides some standard commands for manipulating datasets which rely on the above metadata. However, it does minimal checking that the metadata file is coherent. For instance, running the Port Sniff Test requires that the `dst_port` column is defined. However, if this column is also included in `drop_fields`, there is no guarantee that the test will work (as the port field will have been dropped before the Sniff test is applied). To provide more control over dataset manipulation, commands can be provided via the `operation` key in the metadata file.
 
-* `operations`: list of dictionaries - operation is defined by the `operation` key, parameters for the operation are defined by the `params` key. All methods of the Manipulator class are valid operations. Example operation: `[{"operation": "drop_columns", "params": {"cols_to_drop": ["Col1, Col2"]}, {"operation": "minMaxScale"}}]`
+* `operations`: list of dictionaries - operation is defined by the `operation` key, parameters for the operation are defined by the `params` key. All methods of the Manipulator class are valid operations. Example operation: `[{"operation": "drop_columns", "params": {"cols_to_drop": ["Col1", "Col2"]}, {"operation": "minMaxScale"}}]`
 
 
 

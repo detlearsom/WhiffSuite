@@ -36,8 +36,8 @@ We've run this tool on the following datasets:
 
 (NB: see 'Data' section above. These commands will only work if the necessary data is downloaded and provided correctly. We've included a small sample of *CIC IDS 2018* to run our tests on, but this must be extracted from the provided zip file in the `data/` directory!)
 
-- **Metric**: `python3 src/netstats.py --metadata metadata/cic2018/metadata.json --results results/CIC18_trunc/ --target Bot  --folder --csv data/CIC18_trunc/ --metric KLDivergence`
-- **Test**: `python3 ./src/netstats.py --metadata metadata/cic2018/metadata.json --results results/CIC18_trunc/ --target FTP-BruteForce --folder --csv data/CIC18_trunc/  --test CosineTest`
+- **Metric**: `python3 src/whiff.py --metadata metadata/cic2018/metadata.json --results results/CIC18_trunc/ --target Bot  --folder --csv data/CIC18_trunc/ --metric KLDivergence`
+- **Test**: `python3 ./src/whiff.py --metadata metadata/cic2018/metadata.json --results results/CIC18_trunc/ --target FTP-BruteForce --folder --csv data/CIC18_trunc/  --test CosineTest`
 
 A list of valid options for the `--metric` and `--sniff` flags can be found in the *Metrics* and *Tests* sections below, or you can run WhiffSuite with the `--metriclist` or `--snifflist` flags. 
 

@@ -32,7 +32,7 @@ We've run this tool on the following datasets:
 - [ODDS](https://odds.cs.stonybrook.edu/)
 
 
-## Example Commands#
+## Example Commands
 
 (NB: see 'Data' section above. These commands will only work if the necessary data is downloaded and provided correctly. We've included a small sample of *CIC IDS 2018* to run our tests on, but this must be extracted from the provided zip file in the `data/` directory!)
 
